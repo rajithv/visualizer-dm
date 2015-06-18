@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAXG_7jpsAspIhfBqAsBuXPOk8Vymtvoa0"></script>
+
+</head>
+<body>
+<input type="file" id="files" name="files[]" multiple />
+<output id="list"></output>
+<button id="next">Next</button>
+
+<div id="googleMap" style="width:1280px;height:760px;"></div>
+
+
+<script>
+
+    var map;
+    var file;
+    var isUserSelectionVisible = false;
+
+    var blackdot = 'blackdot.png';
+    var start = 'start.png';
+    var end = 'end.png';
+    var marker_graphic = 'marker.png';
+    var user_icon = 'userselection.png';
+    var prediction = 'marker.png';
+
+    var listOfCoords = new Array();
+    var current = 0;
+
+    var markersArray = [];
+
+
+
+    function addMarker(latlng, freq){
+
+        var pinIcon = new google.maps.MarkerImage("marker.png", null, null, null, new google.maps.Size(freq, freq));
+
+        var marker = new google.maps.Marker({
+            position: latlng,
+            icon: pinIcon,
+        });
+
+        markersArray.push(marker);
+        marker.setMap(map);
+    }
+
+    function initialize() {
+        var mapProp = {
+            center:new google.maps.LatLng(41.155035,-8.619621),
+            zoom:13,
+            mapTypeId:google.maps.MapTypeId.ROADMAP
+        }
+        map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+        //addMarker(41.155567,-8.619900);
+
+    }
+    google.maps.event.addDomListener(window, 'load', initialize);
+
+    function handleFileSelect(evt) {
+        var files = evt.target.files; // FileList object
+        file = files[0];
+
+        var reader = new FileReader();
+        reader.onload = function(){
+            var text = reader.result;
+            var lines = text.split('\n');
+            for(var i=0; i<lines.length; i++){
+                var coord = lines[i].split(',');
+
+                var latlng = new google.maps.LatLng( Math.max(parseFloat(coord[1]), parseFloat(coord[0])),
+                                                     Math.min(parseFloat(coord[1]), parseFloat(coord[0]))  );
+
+                var freq = parseInt(coord[2]);
+
+                addMarker(latlng, freq/1000);
+            }
+        };
+        reader.readAsText(file);
+
+    }
+
+    document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+
+    //document.getElementById('next').addEventListener('click', displayNext, false);
+
+</script>
+</body>
+</html>
