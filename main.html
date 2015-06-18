@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAXG_7jpsAspIhfBqAsBuXPOk8Vymtvoa0"></script>
+
+</head>
+<body>
+    <input type="file" id="files" name="files[]" multiple />
+    <label id="next">Next</label>
+
+    <div id="googleMap" style="width:1280px;height:760px;"></div>
+
+
+    <script>
+
+        var map;
+        var file;
+        var isUserSelectionVisible = false;
+
+        var blackdot = 'blackdot.png';
+        var start = 'start.png';
+        var end = 'end.png';
+        var marker_graphic = 'marker.png';
+        var user_icon = 'userselection.png';
+        var prediction = 'marker.png';
+
+        var listOfCoords = new Array();
+        var current = -1;
+
+        var markersArray = [];
+
+        function clearOverlays() {
+            for (var i = 0; i < markersArray.length; i++ ) {
+                markersArray[i].setMap(null);
+            }
+            markersArray.length = 0;
+            isUserSelectionVisible = false;
+        }
+
+        function displayNext(event){
+
+            var key = event.keyCode;
+
+
+            if(key == 97 && current > -1) current--;
+            else if(current < listOfCoords.length) current++;
+
+            clearOverlays();
+
+
+            if(current == listOfCoords.length){
+                alert("That's it folks!")
+            }else if(current == -1){
+                alert("We aren't even started yet!")
+            }
+            else{
+                var bounds = new google.maps.LatLngBounds();
+                for(var i=0; i<listOfCoords[current].length; i++){
+                    bounds.extend(listOfCoords[current][i]);
+                }
+                map.fitBounds(bounds);
+                addPolyline(listOfCoords[current]);
+                //alert(key);
+                document.getElementById("next").innerHTML = current + " OUT OF " + listOfCoords.length;
+
+            }
+
+
+
+        }
+
+        function addMarker(latlng, type){
+
+            var icon_graphic;
+            switch(type){
+                case 0: icon_graphic = marker_graphic; break;
+                case 1: icon_graphic = blackdot; break;
+                case 2: icon_graphic = start; break;
+                case 3: icon_graphic = end; break;
+                case 4: icon_graphic = user_icon; break;
+                case 5: icon_graphic = prediction; break;
+                default: icon_graphic = marker_graphic;
+            }
+
+            var marker = new google.maps.Marker({
+                position: latlng,
+                icon: icon_graphic,
+            });
+
+            markersArray.push(marker);
+            marker.setMap(map);
+        }
+
+        function addPolyline(latlng){
+            for(var i = 0; i<latlng.length; i++){
+                if(i == 0) addMarker(latlng[i], 5); // prediction
+                else if(i == 1) addMarker(latlng[i], 2); // start
+                else if (i == latlng.length-1) addMarker(latlng[i], 3); // end
+                else addMarker(latlng[i], 1); // normal
+            }
+            var newpath = latlng.slice(1);
+            var path = new google.maps.Polyline({
+                path: newpath,
+                geodesic: true,
+                strokeColor: '#FF0000',
+                strokeOpacity: 1.0,
+                strokeWeight: 2
+            });
+            markersArray.push(path);
+            path.setMap(map);
+        }
+
+        function initialize() {
+            var mapProp = {
+                center:new google.maps.LatLng(41.155035,-8.619621),
+                zoom:13,
+                mapTypeId:google.maps.MapTypeId.ROADMAP
+            }
+            map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+            //addMarker(41.155567,-8.619900);
+
+            google.maps.event.addListener(map, "rightclick", userSelection);
+        }
+        google.maps.event.addDomListener(window, 'load', initialize);
+
+        function userSelection(event) {
+
+            if(isUserSelectionVisible){
+                markersArray[markersArray.length-1].setMap(null);
+                markersArray.length--;
+                isUserSelectionVisible = false;
+            }
+            var lat = event.latLng.lat();
+            var lng = event.latLng.lng();
+
+            addMarker(event.latLng, 4);
+            isUserSelectionVisible = true;
+
+            // populate yor box/field with lat, lng
+            //alert("Lat=" + lat + "; Lng=" + lng);
+            //var r = confirm("You selected the Blue Pin's Location");
+
+        }
+
+        function handleFileSelect(evt) {
+            var files = evt.target.files; // FileList object
+            file = files[0];
+
+            var reader = new FileReader();
+            reader.onload = function(){
+                var text = reader.result;
+                var lines = text.split('\n');
+                for(var i=0; i<lines.length; i++){
+                    var temp = lines[i];
+                    if(temp.charAt(0) == "["){
+                        temp = temp.substr(1);
+                    }
+                    /*if(temp.charAt(temp.length-1) == ","){
+                        temp = temp.substr(0, temp.length-2);
+                    }*/
+                    if(temp.charAt(temp.length-1) == "]"){
+                        temp = temp.substr(0, temp.length-2);
+                    }
+
+                    var coords = temp.split("],[");
+
+                    if(coords.length == 1) {
+                        var lnglat = coords[0].split(',');
+
+                        var latlng = new google.maps.LatLng(parseFloat(lnglat[1]), parseFloat(lnglat[0]));
+                        //addMarker(latlng, 0);
+                        listOfCoords[listOfCoords.length] = path;
+                    }else{
+                        var path = new Array();
+                        for(var j=0; j<coords.length; j++){
+                            var lnglat = coords[j].split(',');
+                            //alert(lnglat[1]+ " " +lnglat[0]);
+                            path[j] = new google.maps.LatLng( Math.max(parseFloat(lnglat[1]), parseFloat(lnglat[0])),
+                                                              Math.min(parseFloat(lnglat[1]), parseFloat(lnglat[0]))  );
+                        }
+                        //addPolyline(path);
+                        listOfCoords[listOfCoords.length] = path;
+                    }
+                }
+                alert("Done Loading "+listOfCoords.length+" items");
+            };
+            reader.readAsText(file);
+
+        }
+
+        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+        window.addEventListener('keypress', displayNext, false);
+
+
+        //document.getElementById('next').addEventListener('click', displayNext, false);
+
+    </script>
+</body>
+</html>
