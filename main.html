@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title></title>
-    <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAXG_7jpsAspIhfBqAsBuXPOk8Vymtvoa0"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAXG_7jpsAspIhfBqAsBuXPOk8Vymtvoa0"></script>
 
 </head>
 <body>
@@ -29,6 +29,8 @@
         var listOfCoords = new Array();
         var current = -1;
 
+        var listOfAnswerCoords = new Array();
+
         var markersArray = [];
 
         function clearOverlays() {
@@ -52,15 +54,39 @@
 
             if(current == listOfCoords.length){
                 alert("That's it folks!")
+
+                var csvContent = "data:text/csv;charset=utf-8,";
+
+                var dataString = "";
+
+                for(var i=0; i<listOfAnswerCoords.length; i++){
+
+                    dataString = "["+listOfAnswerCoords[i].lat()+","+listOfAnswerCoords[i].lng()+"]";
+                    csvContent += i < listOfAnswerCoords.length ? dataString+ "\n" : dataString;
+
+                }
+
+                var encodedUri = encodeURI(csvContent);
+                window.open(encodedUri);
+
             }else if(current == -1){
                 alert("We aren't even started yet!")
             }
             else{
+
+
+
                 var bounds = new google.maps.LatLngBounds();
+                listOfAnswerCoords[current] = listOfCoords[current][0];
                 for(var i=0; i<listOfCoords[current].length; i++){
                     bounds.extend(listOfCoords[current][i]);
                 }
-                map.fitBounds(bounds);
+                if( false ){
+
+                }else {
+                    map.fitBounds(bounds);
+                }
+
                 addPolyline(listOfCoords[current]);
                 //alert(key);
                 document.getElementById("next").innerHTML = current + " OUT OF " + listOfCoords.length;
@@ -95,12 +121,20 @@
 
         function addPolyline(latlng){
             for(var i = 0; i<latlng.length; i++){
+                /*
                 if(i == 0) addMarker(latlng[i], 5); // prediction
                 else if(i == 1) addMarker(latlng[i], 2); // start
                 else if (i == latlng.length-1) addMarker(latlng[i], 3); // end
                 else addMarker(latlng[i], 1); // normal
+                */
+                if(i == 0) addMarker(latlng[i], 5); // prediction
+                else if(i == 1) addMarker(latlng[i], 4); // Hora Prediction
+                else if(i == 2) addMarker(latlng[i], 2); // start
+                else if (i == latlng.length-1) addMarker(latlng[i], 3); // end
+                else addMarker(latlng[i], 1); // normal
+
             }
-            var newpath = latlng.slice(1);
+            var newpath = latlng.slice(2);
             var path = new google.maps.Polyline({
                 path: newpath,
                 geodesic: true,
@@ -137,6 +171,8 @@
 
             addMarker(event.latLng, 4);
             isUserSelectionVisible = true;
+
+            listOfAnswerCoords[current] = event.latLng;
 
             // populate yor box/field with lat, lng
             //alert("Lat=" + lat + "; Lng=" + lng);
