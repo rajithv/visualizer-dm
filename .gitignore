@@ -1,3 +1,5 @@
+# Don't add CSV files because they're too large!!
+*.csv
 
 .idea/.name
 
